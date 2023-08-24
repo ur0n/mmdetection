@@ -23,9 +23,13 @@ RUN rm /etc/apt/sources.list.d/cuda.list \
 
 # Install the required packages
 RUN apt-get update \
-    && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 wget\
+    && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 wget curl\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
+    && apt-get install -y nodejs
+
 
 # Install MMEngine and MMCV
 RUN pip install openmim && \
@@ -35,7 +39,22 @@ RUN pip install openmim && \
 RUN conda clean --all \
     && git clone https://github.com/open-mmlab/mmdetection.git /mmdetection \
     && cd /mmdetection \
-    && pip install --no-cache-dir -e . \
-    && pip install jupyterlab
+    && pip install --no-cache-dir -e .
+
+RUN pip install --upgrade --no-cache-dir \
+    'jupyterlab~=3.0' \
+    'jupyterlab-kite>=2.0.2' \
+    jupyterlab_code_formatter \
+    yapf \
+    && rm -rf ~/.cache/pip
+
+RUN pip install ipywidgets \
+    && rm -rf ~/.cache/pip
+
+RUN cd && \
+    wget https://linux.kite.com/dls/linux/current && \
+    chmod 777 current && \
+    sed -i 's/"--no-launch"//g' current > /dev/null && \
+    ./current --install ./kite-installer
 
 WORKDIR /notebook
